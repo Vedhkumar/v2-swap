@@ -59,7 +59,7 @@ contract Factory {
         ///@dev since we have checked above that _tokenA != _tokenB, it is ok to check anyone token to zero address
         require(_tokenA != address(0), Factory__ZeroAddress());
         (address token0, address token1) = _tokenA > _tokenB ? (_tokenA, _tokenB) : (_tokenB, _tokenA);
-        require(s_getPair[token0][token1] != address(0), Factory__PairExists());
+        require(s_getPair[token0][token1] == address(0), Factory__PairExists());
 
         bytes memory bytecode = type(TokenPair).creationCode;
         bytes32 salt = keccak256(abi.encodePacked(token0, token1));
