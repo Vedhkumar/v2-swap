@@ -20,6 +20,7 @@ contract SwapTest is Test {
     uint256 constant AMOUNTMINT = 10000 ether;
 
     address setUpCaller;
+    address alice = makeAddr("alice");
 
     function setUp() external {
         deploySwap = new DeploySwap();
@@ -27,6 +28,7 @@ contract SwapTest is Test {
         token0 = new Token0(AMOUNTMINT);
         token1 = new Token1(AMOUNTMINT);
         setUpCaller = msg.sender;
+        console2.log("address", alice);
     }
 
     ///Factory///
@@ -59,8 +61,31 @@ contract SwapTest is Test {
     }
 
     modifier createPool() {
+        console2.log(Token0(token0).balanceOf(setUpCaller));
         factory.createPair(address(token0), address(token1));
         _;
     }
+
     ///Router///
+    function testAddLiquidity() external createPool {
+        address pair = SwapLibrary.pairFor(address(factory), address(token0), address(token1));
+        uint256 initialLiquidity = TokenPair(pair).balanceOf(alice);
+        console2.log(alice);
+
+        Token0(token0).approve(address(router), AMOUNTMINT);
+        Token1(token1).approve(address(router), AMOUNTMINT);
+        router.addLiquidity(
+            address(token0),
+            address(token1),
+            AMOUNTMINT,
+            AMOUNTMINT,
+            AMOUNTMINT - 1 ether,
+            AMOUNTMINT - 1 ether,
+            address(factory),
+            alice
+        );
+        uint256 finalLiquidity = TokenPair(pair).balanceOf(alice);
+        assert(initialLiquidity == 0);
+        assert(finalLiquidity > 0);
+    }
 }

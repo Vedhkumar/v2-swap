@@ -27,26 +27,34 @@ import {SwapLibrary} from "./SwapLibrary.sol";
 import {IFactory} from "./interfaces/IFactory.sol";
 import {IERC20} from "./interfaces/IERC20.sol";
 import {TokenPair} from "./TokenPair.sol";
+
 /**
  * @title Router contract
  * @author Vedh Kumar
  * @notice This contract acts as the pool for pair of tokens
  */
-
 contract Router {
     // errors
     error Router__InsufficientOutputAmount();
     error Router__TransferFailed();
     error Router__IdenticalAddress();
     error Router__InsufficientAmount();
+    error Router__ZeroLiquidity();
+    error Router__InsufficientAmountLiquidity();
+    error Router__InsufficientInputAmount();
 
     // Type declarations
     // State variables
+    address public immutable i_factory;
     // Events
     // Modifiers
     // Functions
     // Layout of Functions:
     // constsructor
+
+    constructor(address _factory) {
+        i_factory = _factory;
+    }
     // receive function (if exists)
     // fallback function (if exists)
     // external
@@ -59,16 +67,32 @@ contract Router {
         uint256 _amountBDesired,
         uint256 _amountAMin,
         uint256 _amountBMin,
-        address _factory
+        address _factory,
+        address _to
     ) external {
         (uint256 amountA, uint256 amountB) =
             _addLiquidity(_tokenA, _tokenB, _amountADesired, _amountBDesired, _amountAMin, _amountBMin, _factory);
         address pair = SwapLibrary.pairFor(_factory, _tokenA, _tokenB);
         IERC20(_tokenA).transferFrom(msg.sender, pair, amountA);
         IERC20(_tokenB).transferFrom(msg.sender, pair, amountB);
+        TokenPair(pair).mint(_to);
     }
 
-    function removeLiquidity() external {}
+    function removeLiquidity(
+        address _tokenA,
+        address _tokenB,
+        uint256 _liquidity, //? can a user with same liquidity in diffrent pair and remove tokens from anotoher pair using different liquidity tokens
+        uint256 _amountAMin,
+        uint256 _amountBMin,
+        address _to
+    ) external returns (uint256 amountA, uint256 amountB) {
+        address pair = SwapLibrary.pairFor(i_factory, _tokenA, _tokenB);
+        TokenPair(pair).transferFrom(msg.sender, pair, _liquidity);
+        (uint256 amount0, uint256 amount1) = TokenPair(pair).burn(_to);
+        (address token0,) = SwapLibrary.sortTokens(_tokenA, _tokenB);
+        (amountA, amountB) = token0 == _tokenA ? (amount0, amount1) : (amount1, amount0);
+        require(amountA >= _amountAMin && amountB >= _amountBMin, Router__InsufficientAmountLiquidity());
+    }
 
     //SWAP
     function swapExactTokensForTokens(
@@ -93,7 +117,10 @@ contract Router {
         address _to
     ) external {
         uint256[] memory amounts = SwapLibrary.getAmountsIn(_factory, _amountOutMax, _path);
-        require(amounts[amounts.length - 1] >= _amountOutMax, Router__InsufficientOutputAmount());
+        require(amounts[0] >= _amountIn, Router__InsufficientInputAmount());
+        (bool success,) = SwapLibrary.pairFor(_factory, _path[0], _path[1]).call{value: amounts[0]}("");
+        require(success, Router__TransferFailed());
+        _swap(amounts, _path, _to, _factory);
     }
 
     // public
@@ -110,6 +137,7 @@ contract Router {
             TokenPair(pair).swap(amount0Out, amount1Out, to);
         }
     }
+
     // private
     // internal & private view & pure functions
 
@@ -128,7 +156,7 @@ contract Router {
         );
 
         if (IFactory(_factory).getPair(_tokenA, _tokenB) == address(0)) {
-            address pair = IFactory(_factory).createPair(_tokenA, _tokenB);
+            IFactory(_factory).createPair(_tokenA, _tokenB);
         }
 
         (uint256 reserveA, uint256 reserveB) = SwapLibrary.getReserves(_factory, _tokenA, _tokenB);

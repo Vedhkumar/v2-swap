@@ -25,12 +25,12 @@ pragma solidity ^0.8.26;
 
 import {IERC20} from "./interfaces/IERC20.sol";
 import {SwapERC20} from "./SwapERC20.sol";
+
 /**
  * @title Token Pair contract
  * @author Vedh Kumar
  * @notice This contract acts as the pool for pair of tokens
  */
-
 contract TokenPair is SwapERC20 {
     // errors
     error TokenPair__NotFactory();
@@ -98,14 +98,30 @@ contract TokenPair is SwapERC20 {
             liquidity = (amount0 * amount1 - MINIMUM_LIQUIDITY) ** 1 / 2;
             _mint(address(0), MINIMUM_LIQUIDITY);
         } else {
-            liquidity = amount0 * totalSupply / reserve0;
+            liquidity = (amount0 * totalSupply) / reserve0;
         }
         require(liquidity > 0, TokenPair__InsufficientLiquidity());
         _mint(_to, liquidity);
         _update(balance0, balance1);
     }
 
-    function burn() external {}
+    function burn(address _to) external returns (uint256 amount0, uint256 amount1) {
+        uint256 balance0 = IERC20(s_token0).balanceOf(address(this));
+        uint256 balance1 = IERC20(s_token1).balanceOf(address(this));
+        address token0 = s_token0;
+        address token1 = s_token1;
+        uint256 totalSupply = totalSupply();
+        ///@dev liquidity is send by the user before and it is the amount of liquidity for that user only since we burn it later
+        uint256 liquidity = balanceOf(address(this));
+        amount0 = liquidity * balance0 / totalSupply;
+        amount1 = liquidity * balance1 / totalSupply;
+        _burn(address(this), liquidity);
+        IERC20(token0).transfer(_to, amount0);
+        IERC20(token1).transfer(_to, amount1);
+        balance0 = IERC20(s_token0).balanceOf(address(this));
+        balance1 = IERC20(s_token1).balanceOf(address(this));
+        _update(balance0, balance1);
+    }
 
     // public
     // internal
@@ -113,6 +129,7 @@ contract TokenPair is SwapERC20 {
         s_reserve0 = _balance0;
         s_reserve1 = _balance1;
     }
+
     // private
     // internal & private view & pure functions
     // external & public view & pure functions
