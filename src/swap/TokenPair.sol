@@ -23,7 +23,7 @@
 // SPDX-License-Identifier: SEE LICENSE IN LICENSE
 pragma solidity ^0.8.26;
 
-import {IERC20} from "./interfaces/IERC20.sol";
+import {IERC20} from "src/interfaces/IERC20.sol";
 import {SwapERC20} from "./SwapERC20.sol";
 
 /**
@@ -39,9 +39,9 @@ contract TokenPair is SwapERC20 {
     error TokenPair__InvalidInputAmount();
 
     // Type declarations
-    address public s_factory;
-    address public s_token0;
-    address public s_token1;
+    address private s_factory;
+    address private s_token0;
+    address private s_token1;
 
     uint256 private s_reserve0;
     uint256 private s_reserve1;
@@ -137,5 +137,14 @@ contract TokenPair is SwapERC20 {
     function getReserves() public view returns (uint256 reserve0, uint256 reserve1) {
         reserve0 = s_reserve0;
         reserve1 = s_reserve1;
+    }
+
+    function getFactory() external view returns (address) {
+        return s_factory;
+    }
+
+    function getTokens() external view returns (address token0, address token1) {
+        token0 = s_token0;
+        token1 = s_token1;
     }
 }

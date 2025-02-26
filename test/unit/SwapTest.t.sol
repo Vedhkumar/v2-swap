@@ -3,9 +3,9 @@ pragma solidity ^0.8.26;
 
 import {Test, console2} from "forge-std/Test.sol";
 import {DeploySwap} from "script/DeploySwap.s.sol";
-import {Router} from "src/Router.sol";
-import {Factory} from "src/Factory.sol";
-import {TokenPair} from "src/TokenPair.sol";
+import {Router} from "src/swap/Router.sol";
+import {Factory} from "src/swap/Factory.sol";
+import {TokenPair} from "src/swap/TokenPair.sol";
 import {SwapLibrary} from "src/SwapLibrary.sol";
 import {Token0} from "../mocks/Token0Mock.sol";
 import {Token1} from "../mocks/Token1Mock.sol";

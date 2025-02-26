@@ -23,9 +23,9 @@
 // SPDX-License-Identifier: SEE LICENSE IN LICENSE
 pragma solidity ^0.8.26;
 
-import {SwapLibrary} from "./SwapLibrary.sol";
-import {IFactory} from "./interfaces/IFactory.sol";
-import {IERC20} from "./interfaces/IERC20.sol";
+import {SwapLibrary} from "src/SwapLibrary.sol";
+import {IFactory} from "src/interfaces/IFactory.sol";
+import {IERC20} from "src/interfaces/IERC20.sol";
 import {TokenPair} from "./TokenPair.sol";
 
 /**

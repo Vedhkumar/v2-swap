@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: SEE LICENSE IN LICENSE
 pragma solidity ^0.8.26;
 
-import {TokenPair} from "./TokenPair.sol";
+import {TokenPair} from "src/swap/TokenPair.sol";
 
 library SwapLibrary {
     error Library_InsufficientAmount();
